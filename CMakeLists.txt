@@ -48,16 +48,6 @@ order_book_enable_sanitizers(order_book)
 
 # Create and register tests only when testing is enabled (BUILD_TESTING is ON).
 if(BUILD_TESTING)
-    # Build the unit-test executable.
-    add_executable(order_book_tests tests/matching_engine_test.cpp)
-    # Make project headers available only while compiling the test target.
-    target_include_directories(order_book_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    # Keep the test target on the same C++ language standard as the application.
-    target_compile_features(order_book_tests PRIVATE cxx_std_17)
-    # Apply the same warnings and optional sanitizers to test code.
-    order_book_enable_warnings(order_book_tests)
-    order_book_enable_sanitizers(order_book_tests)
-
-    # Register the executable with CTest under the matching_engine test name.
-    add_test(NAME matching_engine COMMAND order_book_tests)
+    # Let the tests directory define its targets relative to itself.
+    add_subdirectory(tests)
 endif()
