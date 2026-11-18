@@ -19,10 +19,10 @@ int main(){
         }
 
         if(type == "buy"){
-            Buy order(id, idealPrice, stockNumber);
+            BuyOrder order(id, idealPrice, stockNumber);
             std::cout << order << '\n';
         } else if(type == "sell"){
-            Sell order(id, idealPrice, stockNumber);
+            SellOrder order(id, idealPrice, stockNumber);
             std::cout << order << '\n';
         }
     }

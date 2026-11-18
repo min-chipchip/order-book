@@ -33,9 +33,13 @@ class Order{
         int getID(){
             return id;
         };
+
+        int getIdealPrice(){
+            return idealPrice;
+        };
 };
 
-class Sell: public Order{
+class SellOrder: public Order{
     protected:
         int match(int buyPrice, int stockNumber) override{
             if(buyPrice < this->idealPrice) return 0;
@@ -44,14 +48,14 @@ class Sell: public Order{
         }
 
     public:
-        Sell(int id, int idealPrice, int stockNumber): Order(id, idealPrice, stockNumber){};
-        friend std::ostream& operator<<(std::ostream& os, const Sell& p){
+        SellOrder(int id, int idealPrice, int stockNumber): Order(id, idealPrice, stockNumber){};
+        friend std::ostream& operator<<(std::ostream& os, const SellOrder& p){
             os << "Sell Order ID: " << p.id << ", Ideal Price: " << p.idealPrice << ", Stock Number: " << p.stockNumber;
             return os;
         }
 };
 
-class Buy: public Order{
+class BuyOrder: public Order{
     protected:
         int match(int sellPrice, int stockNumber) override{
             if(sellPrice > this->idealPrice) return 0;
@@ -60,9 +64,9 @@ class Buy: public Order{
         };    
     
     public:
-        Buy(int id, int idealPrice, int stockNumber): Order(id, idealPrice, stockNumber){};
+        BuyOrder(int id, int idealPrice, int stockNumber): Order(id, idealPrice, stockNumber){};
         
-        friend std::ostream& operator<<(std::ostream& os, const Buy& p){
+        friend std::ostream& operator<<(std::ostream& os, const BuyOrder& p){
             os << "Buy Order ID: " << p.id << ", Ideal Price: " << p.idealPrice << ", Stock Number: " << p.stockNumber;
             return os;
         }
