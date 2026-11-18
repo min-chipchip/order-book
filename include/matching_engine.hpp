@@ -29,10 +29,14 @@ class matching_engine {
             return orderBook.getBestSellOrder(BuyOrder);
         }
 
-        void receiveBuyOrder(BuyOrder* buyOrder){
-            SellOrder* bestSellOrder = orderBook.getBestSellOrder(buyOrder->getIdealPrice());
+        const std::vector<Trade>& getTradeHistory() const{
+            return orderBook.getTradeHistory();
+        }
 
-            while(bestSellOrder != nullptr){
+        void receiveBuyOrder(BuyOrder* buyOrder){
+            while(buyOrder->getStockNumber() > 0){
+                SellOrder* bestSellOrder = orderBook.getBestSellOrder(buyOrder->getIdealPrice());
+                if(bestSellOrder == nullptr) break;
                 int tradeNumber = bestSellOrder->match(buyOrder->getIdealPrice(), buyOrder->getStockNumber());
                 
                 if(tradeNumber == 0) break;
@@ -44,16 +48,16 @@ class matching_engine {
         }
 
         void receiveSellOrder(SellOrder* sellOrder){
-            BuyOrder* bestBuyOrder = orderBook.getBestBuyOrder(sellOrder->getIdealPrice());
-
-            while(bestBuyOrder != nullptr){
+            while(sellOrder->getStockNumber() > 0){
+                BuyOrder* bestBuyOrder = orderBook.getBestBuyOrder(sellOrder->getIdealPrice());
+                if(bestBuyOrder == nullptr) break;
                 int tradeNumber = bestBuyOrder->match(sellOrder->getIdealPrice(), sellOrder->getStockNumber());
 
                 if(tradeNumber == 0) break;
                 
                 sellOrder->applyTrade(tradeNumber);
                 bestBuyOrder->applyTrade(tradeNumber);
-                orderBook.initiateTrade(bestBuyOrder->getID(), sellOrder->getID(), bestBuyOrder->getIdealPrice(), tradeNumber);
+                orderBook.initiateTrade(sellOrder->getID(), bestBuyOrder->getID(), bestBuyOrder->getIdealPrice(), tradeNumber);
             }
         }
 

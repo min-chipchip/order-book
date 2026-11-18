@@ -1,5 +1,6 @@
 #include "order.hpp"
 #include<deque>
+#include<climits>
 #include<map>
 #include<set>
 #include<vector>
@@ -86,6 +87,10 @@ class OrderBook{
             return trade;
         }
 
+        const std::vector<Trade>& getTradeHistory() const{
+            return tradeHistory;
+        }
+
         void cancel(int id){
             canceledID.insert(id);
         }
@@ -101,7 +106,7 @@ class OrderBook{
         }
 
         BuyOrder* getBestBuyOrder(int SellOrder){
-            while(true){
+            while(!buyPriceList.empty()){
                 int bestPrice = getHighestPrice();
                 if(bestPrice < SellOrder) return nullptr;
                 if(buyOrderList[bestPrice].empty()){
@@ -130,7 +135,7 @@ class OrderBook{
         }
 
         SellOrder* getBestSellOrder(int BuyOrder){
-            while(true){
+            while(!sellPriceList.empty()){
                 int bestPrice = lowestSellPrice();
                 if(bestPrice > BuyOrder) return nullptr;
                 if(sellOrderList[bestPrice].empty()){

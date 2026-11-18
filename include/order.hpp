@@ -26,6 +26,8 @@ class Order{
             this->stockNumber = stockNumber;
         };
 
+        virtual ~Order() = default;
+
         int getID() const{
             return id;
         };
@@ -95,6 +97,21 @@ class Trade{
             this->stockNumber = stockNumber;
             this->sellID = sellID;
             this->buyID = buyID;
+        };
+        int getID() const{
+            return id;
+        };
+        int getSellID() const{
+            return sellID;
+        };
+        int getBuyID() const{
+            return buyID;
+        };
+        int getPrice() const{
+            return price;
+        };
+        int getStockNumber() const{
+            return stockNumber;
         };
         friend std::ostream& operator<<(std::ostream& os, const Trade& p){
             os << "Trade Order ID: " << p.id << ", Ideal Price: " << p.price << ", Stock Number: " << p.stockNumber;
