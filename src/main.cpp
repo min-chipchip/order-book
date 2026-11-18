@@ -1,12 +1,12 @@
 #include <iostream>
 #include <string>
-#include "../include/order.hpp"
-#include<memory>
+#include "matching_engine.hpp"
 
 int main(){
     int operation = 0;
     std::cin >> operation;
-    
+
+    matching_engine engine;
 
     for(int id = 1; id <= operation; ++id){
         std::string type;
@@ -19,11 +19,11 @@ int main(){
         }
 
         if(type == "buy"){
-            BuyOrder order(id, idealPrice, stockNumber);
-            std::cout << order << '\n';
+            engine.receiveBuyOrder(idealPrice, stockNumber);
         } else if(type == "sell"){
-            SellOrder order(id, idealPrice, stockNumber);
-            std::cout << order << '\n';
+            engine.receiveSellOrder(idealPrice, stockNumber);
         }
     }
+
+    engine.print();
 }
