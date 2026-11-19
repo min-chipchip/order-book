@@ -22,7 +22,6 @@ OrderBook::OrderBook() {
     buyPriceList.clear();
     sellOrderList.clear();
     sellPriceList.clear();
-    canceledID.clear();
     tradeHistory.clear();
     transactionID = 0;
 }
@@ -33,8 +32,6 @@ std::ostream& operator<<(std::ostream& os, const OrderBook& p) {
     for(auto& [price, orders]: p.buyOrderList){
         for(const BuyOrder& order: orders){
             if(order.getStockNumber() == 0) continue;
-            std::set<int>::iterator itr = p.canceledID.find(order.getID());
-            if(itr != p.canceledID.end()) continue;
             os << order << '\n';
         }
     }
@@ -42,8 +39,6 @@ std::ostream& operator<<(std::ostream& os, const OrderBook& p) {
     for(auto& [price, orders]: p.sellOrderList){
         for(const SellOrder& order: orders){
             if(order.getStockNumber() == 0) continue;
-            std::set<int>::iterator itr = p.canceledID.find(order.getID());
-            if(itr != p.canceledID.end()) continue;
             os << order << '\n';
         }
     }
@@ -64,6 +59,8 @@ BuyOrder* OrderBook::initiateBuyOrder(int id, int idealPrice, int stockNumber) {
 
     BuyOrder buyOrder(id, idealPrice, stockNumber);
     buyOrderList[buyOrder.getIdealPrice()].push_back(buyOrder);
+    buyIterator[id] = (std::list<BuyOrder>::iterator(--buyOrderList[buyOrder.getIdealPrice()].end()));
+
     buyPriceList.insert(buyOrder.getIdealPrice());
     activeID.insert(buyOrder.getID());
 
@@ -80,6 +77,8 @@ SellOrder* OrderBook::initiateSellOrder(int id, int idealPrice, int stockNumber)
 
     SellOrder sellOrder(id, idealPrice, stockNumber);
     sellOrderList[sellOrder.getIdealPrice()].push_back(sellOrder);
+    sellIterator[id] = (std::list<SellOrder>::iterator(--sellOrderList[sellOrder.getIdealPrice()].end()));
+
     sellPriceList.insert(sellOrder.getIdealPrice());
     activeID.insert(sellOrder.getID());
 
@@ -133,8 +132,22 @@ void OrderBook::executeTrade(BuyOrder& buy, SellOrder& sell, int price, int quan
 bool OrderBook::cancel(int id) {
     auto active = activeID.find(id);
     if(active == activeID.end()) return false;
-    canceledID.insert(id);
     activeID.erase(active);
+
+    auto buyIt = buyIterator.find(id);
+    if(buyIt != buyIterator.end()){
+        int price = buyIt->second->getIdealPrice();
+        buyOrderList[price].erase(buyIt->second);
+        buyIterator.erase(buyIt);
+    }
+
+    auto sellIt = sellIterator.find(id);
+    if(sellIt != sellIterator.end()){
+        int price = sellIt->second->getIdealPrice();
+        sellOrderList[price].erase(sellIt->second);
+        sellIterator.erase(sellIt);
+    }
+
     return true;
 }
 
@@ -164,14 +177,6 @@ BuyOrder* OrderBook::getBestBuyOrder(int SellOrder) {
             continue;
         }
 
-        std::set<int>::iterator itr = canceledID.find(currentBuyOrder->getID());
-
-        if(itr != canceledID.end()){
-            buyOrderList[bestPrice].pop_front();
-            canceledID.erase(itr);
-            continue;
-        }
-
         return currentBuyOrder;
     }
     return nullptr;
@@ -190,14 +195,6 @@ SellOrder* OrderBook::getBestSellOrder(int BuyOrder) {
 
         if(currentSellOrder->getStockNumber() == 0){
             sellOrderList[bestPrice].pop_front();
-            continue;
-        }
-
-        std::set<int>::iterator itr = canceledID.find(currentSellOrder->getID());
-
-        if(itr != canceledID.end()){
-            sellOrderList[bestPrice].pop_front();
-            canceledID.erase(itr);
             continue;
         }
 

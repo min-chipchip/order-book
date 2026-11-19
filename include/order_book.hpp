@@ -5,17 +5,20 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
+#include <list>
 #include <set>
 #include <unordered_set>
 #include <vector>
 
 class OrderBook {
     protected:
-        std::map<int, std::deque<BuyOrder>> buyOrderList;
+        std::map<int, std::list<BuyOrder>> buyOrderList;
         std::set<int> buyPriceList;
-        std::map<int, std::deque<SellOrder>> sellOrderList;
+        std::map<int, std::list<SellOrder>> sellOrderList;
         std::set<int> sellPriceList;
-        std::set<int> canceledID;
+        std::map<int, std::list<BuyOrder>::iterator> buyIterator;
+        std::map<int, std::list<SellOrder>::iterator> sellIterator;
+
         std::vector<Trade> tradeHistory;
         std::set<int> activeID;
         int transactionID = 0;

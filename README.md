@@ -63,12 +63,23 @@ With two arguments, the engine assigns the order ID.
 
 ## Design
 
-The intended implementation keeps each side of the book in price levels:
+The book keeps a `std::list` of orders at each price level. Matching visits
+buy levels from highest to lowest price and sell levels from lowest to highest
+price. New orders join the back of their list, so matching from the front
+preserves arrival order at each price.
 
-- `std::map` ordered descending for buy levels and ascending for sell levels;
-- `std::deque` at every level to preserve time priority;
-- `std::unordered_map` from order ID to its active order for efficient
-  cancellation.
+### Eager vs. lazy cancellation
+
+The original **lazy cancellation** marked an order inactive and left it in
+the price queue. Matching discarded canceled orders when they reached the
+front. A burst of cancellations could leave the next match with a long queue
+of entries to skip.
+
+With **eager cancellation**, each side has a `std::map` from order ID to its
+list iterator. `CANCEL` finds the iterator and erases the order immediately.
+Erasing a node takes constant time and preserves the iterators and relative
+order of the other orders at that price. The ordered index and price lookups
+give cancellation a logarithmic cost without scanning a price queue.
 
 ### Source layout
 
@@ -188,27 +199,33 @@ workload size.
 
 ### Results on MacBook Pro (Apple M4)
 
-Recorded on a MacBook Pro with an Apple M4 chip during a run from VS Code.
+Both implementations used the same Release compiler flags. The lazy baseline
+is commit `531c77d`.
 
 #### Buy/sell submissions
 
-| Orders | Submit batch (µs) |
-| ---: | ---: |
-| 100 | 36.167 |
-| 1,000 | 677.417 |
-| 10,000 | 7,767.833 |
-| 100,000 | 70,734.541 |
-| 1,000,000 | 742,478.083 |
+| Orders | Lazy batch (µs) | Eager batch (µs) |
+| ---: | ---: | ---: |
+| 100 | 42.291 | 48.834 |
+| 1,000 | 689.583 | 736.542 |
+| 10,000 | 3,791.792 | 4,544.583 |
+| 100,000 | 35,257.292 | 46,166.250 |
+| 1,000,000 | 393,541.958 | 491,289.500 |
 
 #### Cancellation burst
 
-| Orders cancelled | Cancel batch (µs) | Next buy (µs) |
-| ---: | ---: | ---: |
-| 100 | 6.125 | 3.625 |
-| 1,000 | 60.583 | 34.334 |
-| 10,000 | 844.125 | 377.750 |
-| 100,000 | 17,353.958 | 4,012.417 |
-| 1,000,000 | 274,366.208 | 70,770.708 |
+| Orders canceled | Lazy cancel batch (µs) | Eager cancel batch (µs) | Lazy next buy (µs) | Eager next buy (µs) |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 | 2.708 | 3.667 | 1.667 | 0.125 |
+| 1,000 | 37.375 | 39.417 | 19.041 | 0.125 |
+| 10,000 | 431.375 | 421.000 | 178.834 | 0.208 |
+| 100,000 | 8,356.166 | 4,836.208 | 2,048.291 | 1.167 |
+| 1,000,000 | 115,704.750 | 62,291.334 | 29,079.792 | 2.041 |
+
+In this workload, eager cancellation reduced the next buy's latency from
+29.1 ms to about 2 µs after one million cancellations. The mixed submission
+batch took longer with eager cancellation, which maintains an iterator index
+as orders arrive.
 
 ## Future work
 
