@@ -4,19 +4,17 @@
 #include <stdexcept>
 
 void OrderBook::add_transaction() {
-    do {
-        if (transactionID == INT_MAX) {
-            throw std::overflow_error("No sequential transaction IDs remain");
-        }
-        ++transactionID;
-    } while (callerOrderIDs.count(transactionID) != 0);
+    if (transactionID == INT_MAX) {
+        throw std::overflow_error("No sequential transaction IDs remain");
+    }
+    ++transactionID;
 }
 
-bool OrderBook::reserveCallerOrderID(int id) {
-    // Sequential IDs are shared by orders and trades. Any value already
-    // passed by the counter was generated or reserved by a caller.
-    if (id > 0 && id <= transactionID) return false;
-    return callerOrderIDs.insert(id).second;
+int OrderBook::nextOrderID() {
+    do {
+        add_transaction();
+    } while (usedOrderIDs.count(transactionID) != 0);
+    return transactionID;
 }
 
 OrderBook::OrderBook() {
@@ -58,16 +56,12 @@ std::ostream& operator<<(std::ostream& os, const OrderBook& p) {
 
 BuyOrder* OrderBook::initiateBuyOrder(int idealPrice, int stockNumber) {
     if(stockNumber <= 0) return nullptr;
-    add_transaction();
-    return insertBuyOrder(transactionID, idealPrice, stockNumber);
+    return initiateBuyOrder(nextOrderID(), idealPrice, stockNumber);
 }
 
 BuyOrder* OrderBook::initiateBuyOrder(int id, int idealPrice, int stockNumber) {
-    if (stockNumber <= 0 || !reserveCallerOrderID(id)) return nullptr;
-    return insertBuyOrder(id, idealPrice, stockNumber);
-}
+    if (stockNumber <= 0 || !usedOrderIDs.insert(id).second) return nullptr;
 
-BuyOrder* OrderBook::insertBuyOrder(int id, int idealPrice, int stockNumber) {
     BuyOrder buyOrder(id, idealPrice, stockNumber);
     buyOrderList[buyOrder.getIdealPrice()].push_back(buyOrder);
     buyPriceList.insert(buyOrder.getIdealPrice());
@@ -78,16 +72,12 @@ BuyOrder* OrderBook::insertBuyOrder(int id, int idealPrice, int stockNumber) {
 
 SellOrder* OrderBook::initiateSellOrder(int idealPrice, int stockNumber) {
     if(stockNumber <= 0) return nullptr;
-    add_transaction();
-    return insertSellOrder(transactionID, idealPrice, stockNumber);
+    return initiateSellOrder(nextOrderID(), idealPrice, stockNumber);
 }
 
 SellOrder* OrderBook::initiateSellOrder(int id, int idealPrice, int stockNumber) {
-    if (stockNumber <= 0 || !reserveCallerOrderID(id)) return nullptr;
-    return insertSellOrder(id, idealPrice, stockNumber);
-}
+    if (stockNumber <= 0 || !usedOrderIDs.insert(id).second) return nullptr;
 
-SellOrder* OrderBook::insertSellOrder(int id, int idealPrice, int stockNumber) {
     SellOrder sellOrder(id, idealPrice, stockNumber);
     sellOrderList[sellOrder.getIdealPrice()].push_back(sellOrder);
     sellPriceList.insert(sellOrder.getIdealPrice());

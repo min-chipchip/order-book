@@ -38,7 +38,7 @@ target_compile_features(order_book_core PUBLIC cxx_std_17)
 order_book_enable_warnings(order_book_core)
 order_book_enable_sanitizers(order_book_core)
 
-add_executable(order_book src/main.cpp)
+add_executable(order_book src/main.cpp src/command_parser.cpp)
 target_link_libraries(order_book PRIVATE order_book_core)
 order_book_enable_warnings(order_book)
 order_book_enable_sanitizers(order_book)

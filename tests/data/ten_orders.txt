@@ -1,11 +1,11 @@
 10
-sell 105 2
-sell 100 3
-sell 100 4
-buy 102 5
-buy 100 2
-buy 99 4
-buy 98 2
-sell 98 5
-buy 104 2
-sell 106 1
+SELL 105 2
+SELL 100 3
+SELL 100 4
+BUY 102 5
+BUY 100 2
+BUY 99 4
+BUY 98 2
+SELL 98 5
+BUY 104 2
+SELL 106 1

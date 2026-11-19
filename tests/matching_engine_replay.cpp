@@ -114,13 +114,13 @@ void runReplay(int operations, unsigned seed) {
             std::vector<TradeFields> expectedTrades;
             if (actions[step] == Action::cancel) {
                 const int id = cancelTarget(reference, random);
-                input << "cancel " << id << '\n';
+                input << "CANCEL " << id << '\n';
                 require(engine.cancel(id) == reference.cancel(id), "unexpected cancellation result");
             } else {
                 const auto side = actions[step] == Action::buy ? Side::buy : Side::sell;
                 const int price = prices(random);
                 const int quantity = quantities(random);
-                input << (side == Side::buy ? "buy " : "sell ") << price << ' ' << quantity << '\n';
+                input << (side == Side::buy ? "BUY " : "SELL ") << price << ' ' << quantity << '\n';
                 expectedTrades = reference.submit(side, price, quantity);
                 engine.submit(side, price, quantity);
             }

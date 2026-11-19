@@ -349,11 +349,10 @@ void caller_order_ids_stay_reserved() {
 
     book.executeTrade(*buy, *sell, 100, 2);
     const auto& trades = book.getTradeHistory();
-    require(trades.size() == 1 && trades.front().getID() == 4 &&
+    require(trades.size() == 1 && trades.front().getID() == 3 &&
             trades.front().getBuyID() == 3 && trades.front().getSellID() == 1,
-            "the trade should get its own ID and retain both order IDs");
+            "a trade ID may overlap numerically with an order ID");
     require(book.initiateBuyOrder(1, 100, 1) == nullptr, "a filled ID must stay reserved");
-    require(book.initiateSellOrder(4, 105, 1) == nullptr, "a trade ID cannot be reused");
     require(book.cancel(3), "a partially filled order should be cancellable by its caller ID");
 
     const SellOrder* highId = book.initiateSellOrder(INT_MAX, 105, 1);
@@ -361,7 +360,7 @@ void caller_order_ids_stay_reserved() {
     require(book.cancel(INT_MAX), "a sell should be cancellable by its caller ID");
     require(book.initiateSellOrder(INT_MAX, 105, 1) == nullptr, "a canceled ID must stay reserved");
     const SellOrder* next = book.initiateSellOrder(105, 1);
-    require(next && next->getID() == 5, "a high caller ID must not advance the generated sequence");
+    require(next && next->getID() == 4, "a high caller ID must not advance the generated sequence");
 }
 
 void caller_order_ids_flow_through_matching_engine() {
@@ -390,6 +389,11 @@ void caller_order_ids_flow_through_matching_engine() {
         require(engine.cancel(incomingID), "the remainder should be cancellable by its caller ID");
         const auto depth = engine.getDepth(5);
         require(depth.buys.empty() && depth.sells.empty(), "cancellation should remove the remainder");
+
+        const int tradeID = onlyTrade(engine).getID();
+        require(!engine.cancel(tradeID), "a trade ID by itself does not identify a cancellable order");
+        const auto newOrder = engine.submitBuyOrder(tradeID, restingPrice, 1);
+        require(newOrder && newOrder->id == tradeID, "an earlier trade must not reserve an order ID");
     }
 }
 

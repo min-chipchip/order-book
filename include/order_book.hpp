@@ -23,11 +23,9 @@ class OrderBook {
         void add_transaction();
 
     private:
-        std::unordered_set<int> callerOrderIDs;
+        std::unordered_set<int> usedOrderIDs;
 
-        bool reserveCallerOrderID(int id);
-        BuyOrder* insertBuyOrder(int id, int idealPrice, int stockNumber);
-        SellOrder* insertSellOrder(int id, int idealPrice, int stockNumber);
+        int nextOrderID();
 
     public:
         struct PriceLevel {

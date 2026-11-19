@@ -1,12 +1,14 @@
+#include "command_parser.hpp"
+
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "matching_engine.hpp"
 
-int main() {
+namespace {
+
+int runCountedCli(const std::string& firstLine) {
     std::string line;
-    std::getline(std::cin >> std::ws, line);
-    std::istringstream header(line);
+    std::istringstream header(firstLine);
     int operations;
     char extra;
     if (!(header >> operations) || operations < 0 || (header >> extra)) {
@@ -14,7 +16,7 @@ int main() {
         return 1;
     }
 
-    matching_engine engine;
+    CommandParser parser(CommandParser::Format::Counted);
     bool invalid = false;
     for (int index = 0; index < operations; ++index) {
         if (!std::getline(std::cin >> std::ws, line)) {
@@ -23,32 +25,33 @@ int main() {
             break;
         }
 
-        std::istringstream row(line);
-        std::string type;
-        int price, quantity;
-        if (!(row >> type >> price >> quantity) || (row >> extra)) {
-            std::cerr << "Invalid order row " << index + 1 << '\n';
+        if (!parser.runCommandCli(line, index + 1)) {
             invalid = true;
-            continue;
-        }
-        if (type != "buy" && type != "sell") {
-            std::cerr << "Invalid order type: " << type << '\n';
-            invalid = true;
-            continue;
-        }
-        if (quantity <= 0) {
-            std::cerr << "Invalid quantity for order row " << index + 1 << '\n';
-            invalid = true;
-            continue;
-        }
-
-        if (type == "buy") {
-            engine.receiveBuyOrder(price, quantity);
-        } else {
-            engine.receiveSellOrder(price, quantity);
         }
     }
 
-    engine.print();
+    parser.finish();
     return invalid ? 1 : 0;
+}
+
+int runUncountedCli(std::string line) {
+    CommandParser parser(CommandParser::Format::Uncounted);
+    bool invalid = false;
+    do {
+        if (!parser.runCommandCli(line)) {
+            invalid = true;
+        }
+    } while (std::getline(std::cin, line));
+    return invalid ? 1 : 0;
+}
+
+} // namespace
+
+int main() {
+    std::string firstLine;
+    std::getline(std::cin >> std::ws, firstLine);
+    if (!firstLine.empty() && firstLine.front() >= 'A' && firstLine.front() <= 'Z') {
+        return runUncountedCli(firstLine);
+    }
+    return runCountedCli(firstLine);
 }

@@ -25,8 +25,10 @@ CANCEL <id>
 PRINT
 ```
 
-`id` is supplied by the caller and uniquely identifies an order. A cancelled,
-filled, or unknown ID must fail safely and must not change the book.
+`id` is supplied by the caller and uniquely identifies an order for the life
+of the book, including after it fills or is canceled. Trade IDs identify
+executions separately. Canceling a filled, canceled, or unknown order leaves
+the book unchanged.
 
 Example input:
 
@@ -52,6 +54,12 @@ $100.00 | 10
 `PRINT` displays outstanding quantity aggregated by price level: sells in
 ascending price order, then buys in descending price order. Filled and
 cancelled orders are omitted.
+
+Both CLI formats use uppercase command names. The uncounted CLI reads
+commands until end-of-input. The counted CLI starts with the number of
+commands. In counted mode, `BUY` and `SELL` accept either
+`<id> <price-in-cents> <quantity>` or `<price-in-cents> <quantity>`.
+With two arguments, the engine assigns the order ID.
 
 ## Design
 
