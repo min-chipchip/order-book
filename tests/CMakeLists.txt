@@ -1,7 +1,6 @@
 add_executable(order_book_tests matching_engine_test.cpp matching_engine_replay.cpp)
 
-target_include_directories(order_book_tests PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_compile_features(order_book_tests PRIVATE cxx_std_17)
+target_link_libraries(order_book_tests PRIVATE order_book_core)
 
 order_book_enable_warnings(order_book_tests)
 order_book_enable_sanitizers(order_book_tests)

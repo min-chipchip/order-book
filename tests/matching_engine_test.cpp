@@ -322,6 +322,7 @@ void depth_aggregates_only_active_orders() {
     require(onlyTrade(engine).getID() == 9, "expected a separate ID for the trade");
 
     const auto depth = engine.getDepth(2);
+
     require(depth.buys.size() == 2 && depth.buys[0].price == 100 && depth.buys[0].quantity == 2 &&
             depth.buys[1].price == 95 && depth.buys[1].quantity == 6,
             "buy depth should exclude canceled orders and aggregate same-price quantities");

@@ -5,16 +5,6 @@ cmake_minimum_required(VERSION 3.16)
 # Define the project and restrict it to C++ sources.
 project(order_book LANGUAGES CXX)
 
-# Build the application's executable from its entry point.
-add_executable(order_book src/main.cpp)
-
-# Make project headers available while compiling this executable. PRIVATE means
-# the include path is not inherited by targets that link against order_book.
-target_include_directories(order_book PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# Require C++17 for this target without setting a global compiler flag.
-target_compile_features(order_book PRIVATE cxx_std_17)
-
 # Provide the BUILD_TESTING option and CTest integration for registered tests.
 include(CTest)
 
@@ -42,13 +32,19 @@ function(order_book_enable_sanitizers target)
     endif()
 endfunction()
 
-# Apply the shared quality checks to the application target.
+add_library(order_book_core STATIC src/matching_engine.cpp src/order_book.cpp)
+target_include_directories(order_book_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(order_book_core PUBLIC cxx_std_17)
+order_book_enable_warnings(order_book_core)
+order_book_enable_sanitizers(order_book_core)
+
+add_executable(order_book src/main.cpp)
+target_link_libraries(order_book PRIVATE order_book_core)
 order_book_enable_warnings(order_book)
 order_book_enable_sanitizers(order_book)
 
 add_executable(order_book_web src/web_engine.cpp)
-target_include_directories(order_book_web PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_features(order_book_web PRIVATE cxx_std_17)
+target_link_libraries(order_book_web PRIVATE order_book_core)
 order_book_enable_warnings(order_book_web)
 order_book_enable_sanitizers(order_book_web)
 
