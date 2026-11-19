@@ -331,6 +331,39 @@ void depth_aggregates_only_active_orders() {
             "sell depth should omit the filled price level and sort the remainder");
 }
 
+void caller_order_ids_stay_reserved() {
+    OrderBook book;
+    require(book.initiateSellOrder(1, 100, 0) == nullptr,
+            "an invalid quantity must leave the caller ID available");
+    SellOrder* sell = book.initiateSellOrder(1, 100, 2);
+    BuyOrder* buy = book.initiateBuyOrder(3, 100, 3);
+    require(sell && sell->getID() == 1 && buy && buy->getID() == 3,
+            "both sides should store the caller's ID");
+    require(book.initiateBuyOrder(1, 100, 1) == nullptr,
+            "an active sell ID cannot be reused for a buy");
+
+    const BuyOrder* generated = book.initiateBuyOrder(99, 1);
+    require(generated && generated->getID() == 2, "automatic IDs should skip caller IDs");
+    require(book.initiateSellOrder(2, 105, 1) == nullptr,
+            "a generated order ID cannot be reused");
+
+    book.executeTrade(*buy, *sell, 100, 2);
+    const auto& trades = book.getTradeHistory();
+    require(trades.size() == 1 && trades.front().getID() == 4 &&
+            trades.front().getBuyID() == 3 && trades.front().getSellID() == 1,
+            "the trade should get its own ID and retain both order IDs");
+    require(book.initiateBuyOrder(1, 100, 1) == nullptr, "a filled ID must stay reserved");
+    require(book.initiateSellOrder(4, 105, 1) == nullptr, "a trade ID cannot be reused");
+    require(book.cancel(3), "a partially filled order should be cancellable by its caller ID");
+
+    const SellOrder* highId = book.initiateSellOrder(INT_MAX, 105, 1);
+    require(highId && highId->getID() == INT_MAX, "a high caller ID should be accepted");
+    require(book.cancel(INT_MAX), "a sell should be cancellable by its caller ID");
+    require(book.initiateSellOrder(INT_MAX, 105, 1) == nullptr, "a canceled ID must stay reserved");
+    const SellOrder* next = book.initiateSellOrder(105, 1);
+    require(next && next->getID() == 5, "a high caller ID must not advance the generated sequence");
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -350,6 +383,7 @@ int main(int argc, char* argv[]) {
         {"cancellations_100_operations_preserve_queue_order", cancellations_100_operations_preserve_queue_order},
         {"nonpositive_quantities_are_rejected", nonpositive_quantities_are_rejected},
         {"depth_aggregates_only_active_orders", depth_aggregates_only_active_orders},
+        {"caller_order_ids_stay_reserved", caller_order_ids_stay_reserved},
         {"replay_10_seed_42", [] { engine_test::runReplay(10, 42); }},
         {"replay_100_seed_42", [] { engine_test::runReplay(100, 42); }},
         {"replay_1000_seed_42", [] { engine_test::runReplay(1000, 42); }},

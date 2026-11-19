@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <set>
+#include <unordered_set>
 #include <vector>
 
 class OrderBook {
@@ -20,6 +21,13 @@ class OrderBook {
         int transactionID = 0;
 
         void add_transaction();
+
+    private:
+        std::unordered_set<int> callerOrderIDs;
+
+        bool reserveCallerOrderID(int id);
+        BuyOrder* insertBuyOrder(int id, int idealPrice, int stockNumber);
+        SellOrder* insertSellOrder(int id, int idealPrice, int stockNumber);
 
     public:
         struct PriceLevel {
@@ -37,8 +45,10 @@ class OrderBook {
         friend std::ostream& operator<<(std::ostream& os, const OrderBook& p);
 
         BuyOrder* initiateBuyOrder(int idealPrice, int stockNumber);
+        BuyOrder* initiateBuyOrder(int id, int idealPrice, int stockNumber);
 
         SellOrder* initiateSellOrder(int idealPrice, int stockNumber);
+        SellOrder* initiateSellOrder(int id, int idealPrice, int stockNumber);
 
         Trade initiateTrade(int sellID, int buyID, int price, int stockNumber);
 
