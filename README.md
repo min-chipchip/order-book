@@ -222,10 +222,18 @@ is commit `531c77d`.
 | 100,000 | 8,356.166 | 4,836.208 | 2,048.291 | 1.167 |
 | 1,000,000 | 115,704.750 | 62,291.334 | 29,079.792 | 2.041 |
 
-In this workload, eager cancellation reduced the next buy's latency from
-29.1 ms to about 2 µs after one million cancellations. The mixed submission
-batch took longer with eager cancellation, which maintains an iterator index
-as orders arrive.
+The main benefit of eager cancellation is lower latency for the next buy.
+It can reach the remaining sell immediately because `CANCEL` has already
+removed the orders ahead of it. In the run above, the next buy went from
+29.1 ms with lazy cancellation to about 2 µs with eager cancellation after
+one million cancellations.
+
+Cancel-batch timings vary with batch size and between runs. In the table,
+the eager batch took longer at 100 and 1,000 cancellations and was faster at
+larger sizes. A separate eager run took 147.7 ms at one million cancellations,
+above the 115.7 ms lazy result shown here. The mixed submission batch also
+took longer with eager cancellation, which maintains an iterator index as
+orders arrive.
 
 ## Future work
 
