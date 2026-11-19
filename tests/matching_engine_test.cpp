@@ -305,6 +305,31 @@ void nonpositive_quantities_are_rejected() {
             "only the valid buy remainder should be open");
 }
 
+void depth_aggregates_only_active_orders() {
+    matching_engine engine;
+    engine.receiveBuyOrder(95, 2);
+    engine.receiveBuyOrder(95, 4);
+    engine.receiveBuyOrder(105, 10);
+    require(engine.cancel(3), "expected to cancel the highest buy");
+    engine.receiveBuyOrder(90, 1);
+    engine.receiveSellOrder(100, 5);
+    engine.receiveSellOrder(110, 8);
+    engine.receiveSellOrder(120, 6);
+
+    const auto receipt = engine.submitBuyOrder(100, 7);
+    require(receipt && receipt->id == 8 && receipt->filled == 5 && receipt->open == 2,
+            "expected the incoming order ID and immediate fill quantities");
+    require(onlyTrade(engine).getID() == 9, "expected a separate ID for the trade");
+
+    const auto depth = engine.getDepth(2);
+    require(depth.buys.size() == 2 && depth.buys[0].price == 100 && depth.buys[0].quantity == 2 &&
+            depth.buys[1].price == 95 && depth.buys[1].quantity == 6,
+            "buy depth should exclude canceled orders and aggregate same-price quantities");
+    require(depth.sells.size() == 2 && depth.sells[0].price == 110 && depth.sells[0].quantity == 8 &&
+            depth.sells[1].price == 120 && depth.sells[1].quantity == 6,
+            "sell depth should omit the filled price level and sort the remainder");
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -323,6 +348,7 @@ int main(int argc, char* argv[]) {
         {"unknown_cancellation_does_not_hide_future_order", unknown_cancellation_does_not_hide_future_order},
         {"cancellations_100_operations_preserve_queue_order", cancellations_100_operations_preserve_queue_order},
         {"nonpositive_quantities_are_rejected", nonpositive_quantities_are_rejected},
+        {"depth_aggregates_only_active_orders", depth_aggregates_only_active_orders},
         {"replay_10_seed_42", [] { engine_test::runReplay(10, 42); }},
         {"replay_100_seed_42", [] { engine_test::runReplay(100, 42); }},
         {"replay_1000_seed_42", [] { engine_test::runReplay(1000, 42); }},

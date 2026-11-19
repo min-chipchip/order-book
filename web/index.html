@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ORDER BOOK V1</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="exchange">
+    <header class="exchange-header">
+      <h1>Order Book V1</h1>
+    </header>
+
+    <div class="exchange-main">
+      <section class="panel" aria-labelledby="order-heading">
+        <h2 id="order-heading">Place an order</h2>
+        <form action="/orders" method="post">
+          <fieldset>
+            <legend>Side</legend>
+            <div class="side-options">
+              <label><input type="radio" name="side" value="buy" $buy_checked><span>Buy</span></label>
+              <label><input type="radio" name="side" value="sell" $sell_checked><span>Sell</span></label>
+            </div>
+          </fieldset>
+          <div class="order-fields">
+            <label>
+              <span>Quantity</span>
+              <input name="quantity" inputmode="numeric" pattern="[0-9]+" title="Enter a whole number of shares" placeholder="12" value="$quantity" required>
+            </label>
+            <label>
+              <span>Limit price <span class="unit">(USD)</span></span>
+              <input name="price" inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" title="Enter dollars with up to two decimal places" placeholder="100.15" value="$price" required>
+            </label>
+          </div>
+          <button type="submit">Place order</button>
+          $error
+        </form>
+        <div class="receipt" role="status">$receipt</div>
+      </section>
+
+      <section class="panel" aria-labelledby="book-heading">
+        <h2 id="book-heading">Order book</h2>
+        <div class="book-tables">
+          <table class="bids">
+            <caption>Best buys</caption>
+            <thead><tr><th scope="col">Price</th><th scope="col">Quantity</th></tr></thead>
+            <tbody>$buy_rows</tbody>
+          </table>
+          <table class="asks">
+            <caption>Best sells</caption>
+            <thead><tr><th scope="col">Price</th><th scope="col">Quantity</th></tr></thead>
+            <tbody>$sell_rows</tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel trades" aria-labelledby="trades-heading">
+        <h2 id="trades-heading">Recent trades</h2>
+        <table aria-labelledby="trades-heading">
+          <thead><tr><th scope="col">Trade ID</th><th scope="col">Execution price</th><th scope="col">Quantity</th></tr></thead>
+          <tbody>$trade_rows</tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

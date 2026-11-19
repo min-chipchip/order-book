@@ -1,6 +1,8 @@
 #include "order.hpp"
 #include<deque>
 #include<climits>
+#include<cstddef>
+#include<cstdint>
 #include<map>
 #include<set>
 #include<vector>
@@ -21,6 +23,16 @@ class OrderBook{
         }
     
     public:
+        struct PriceLevel {
+            int price;
+            std::int64_t quantity;
+        };
+
+        struct Depth {
+            std::vector<PriceLevel> buys;
+            std::vector<PriceLevel> sells;
+        };
+
         OrderBook(){
             buyOrderList.clear();
             buyPriceList.clear();
@@ -94,6 +106,32 @@ class OrderBook{
 
         const std::vector<Trade>& getTradeHistory() const{
             return tradeHistory;
+        }
+
+        Depth getDepth(std::size_t limit) const {
+            const auto collect = [this, limit](auto position, auto end) {
+                std::vector<PriceLevel> levels;
+
+                for(; position != end && levels.size() < limit; ++position){
+                    const auto& [price, orders] = *position;
+                    std::int64_t quantity = 0;
+
+                    for(const auto &order : orders){
+                        if(activeID.count(order.getID()) != 0){
+                            quantity += order.getStockNumber();
+                        }
+                    }
+
+                    if(quantity > 0){
+                        levels.push_back({price, quantity});
+                    }
+                }
+
+                return levels;
+            };
+
+            return {collect(buyOrderList.rbegin(), buyOrderList.rend()),
+                    collect(sellOrderList.rbegin(), sellOrderList.rend())};
         }
 
         void executeTrade(BuyOrder& buy, SellOrder& sell, int price, int quantity){

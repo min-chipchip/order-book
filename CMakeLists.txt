@@ -46,6 +46,12 @@ endfunction()
 order_book_enable_warnings(order_book)
 order_book_enable_sanitizers(order_book)
 
+add_executable(order_book_web src/web_engine.cpp)
+target_include_directories(order_book_web PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_features(order_book_web PRIVATE cxx_std_17)
+order_book_enable_warnings(order_book_web)
+order_book_enable_sanitizers(order_book_web)
+
 # Create and register tests only when testing is enabled (BUILD_TESTING is ON).
 if(BUILD_TESTING)
     # Let the tests directory define its targets relative to itself.

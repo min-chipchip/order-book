@@ -1,9 +1,16 @@
 #include "order_book.hpp"
+#include <optional>
 
 class matching_engine {
     protected:
         OrderBook orderBook;
     public:
+        struct OrderReceipt {
+            int id;
+            int filled;
+            int open;
+        };
+
         matching_engine(){
             orderBook = OrderBook();
         }
@@ -12,13 +19,31 @@ class matching_engine {
         }
 
         void receiveBuyOrder(int idealPrice, int stockNumber){
+            submitBuyOrder(idealPrice, stockNumber);
+        }
+
+        std::optional<OrderReceipt> submitBuyOrder(int idealPrice, int stockNumber) {
             BuyOrder* order = orderBook.initiateBuyOrder(idealPrice, stockNumber);
-            if(order != nullptr) receiveBuyOrder(order);
+            if (order == nullptr) return std::nullopt;
+            receiveBuyOrder(order);
+            const int open = order->getStockNumber();
+            return OrderReceipt{order->getID(), stockNumber - open, open};
         }
 
         void receiveSellOrder(int idealPrice, int stockNumber){
+            submitSellOrder(idealPrice, stockNumber);
+        }
+
+        std::optional<OrderReceipt> submitSellOrder(int idealPrice, int stockNumber) {
             SellOrder* order = orderBook.initiateSellOrder(idealPrice, stockNumber);
-            if(order != nullptr) receiveSellOrder(order);
+            if (order == nullptr) return std::nullopt;
+            receiveSellOrder(order);
+            const int open = order->getStockNumber();
+            return OrderReceipt{order->getID(), stockNumber - open, open};
+        }
+
+        OrderBook::Depth getDepth(std::size_t limit) const {
+            return orderBook.getDepth(limit);
         }
 
         BuyOrder* getBestBuyOrder(int SellOrder){
