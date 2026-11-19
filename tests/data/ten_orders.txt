@@ -1,0 +1,11 @@
+10
+sell 105 2
+sell 100 3
+sell 100 4
+buy 102 5
+buy 100 2
+buy 99 4
+buy 98 2
+sell 98 5
+buy 104 2
+sell 106 1

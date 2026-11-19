@@ -7,18 +7,18 @@ class matching_engine {
         matching_engine(){
             orderBook = OrderBook();
         }
-        void cancel(int id){
-            orderBook.cancel(id);
+        bool cancel(int id){
+            return orderBook.cancel(id);
         }
 
         void receiveBuyOrder(int idealPrice, int stockNumber){
             BuyOrder* order = orderBook.initiateBuyOrder(idealPrice, stockNumber);
-            receiveBuyOrder(order);
+            if(order != nullptr) receiveBuyOrder(order);
         }
 
         void receiveSellOrder(int idealPrice, int stockNumber){
             SellOrder* order = orderBook.initiateSellOrder(idealPrice, stockNumber);
-            receiveSellOrder(order);
+            if(order != nullptr) receiveSellOrder(order);
         }
 
         BuyOrder* getBestBuyOrder(int SellOrder){
@@ -41,9 +41,7 @@ class matching_engine {
                 
                 if(tradeNumber == 0) break;
 
-                buyOrder->applyTrade(tradeNumber);
-                bestSellOrder->applyTrade(tradeNumber);
-                orderBook.initiateTrade(bestSellOrder->getID(), buyOrder->getID(), bestSellOrder->getIdealPrice(), tradeNumber);
+                orderBook.executeTrade(*buyOrder, *bestSellOrder, bestSellOrder->getIdealPrice(), tradeNumber);
             }
         }
 
@@ -55,9 +53,7 @@ class matching_engine {
 
                 if(tradeNumber == 0) break;
                 
-                sellOrder->applyTrade(tradeNumber);
-                bestBuyOrder->applyTrade(tradeNumber);
-                orderBook.initiateTrade(sellOrder->getID(), bestBuyOrder->getID(), bestBuyOrder->getIdealPrice(), tradeNumber);
+                orderBook.executeTrade(*bestBuyOrder, *sellOrder, bestBuyOrder->getIdealPrice(), tradeNumber);
             }
         }
 

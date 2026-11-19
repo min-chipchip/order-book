@@ -13,6 +13,7 @@ class OrderBook{
         std::set<int> sellPriceList;
         std::set<int> canceledID;
         std::vector<Trade> tradeHistory;
+        std::set<int> activeID;
         int transactionID = 0;
 
         void add_transaction(){
@@ -58,23 +59,27 @@ class OrderBook{
         }
 
         BuyOrder* initiateBuyOrder(int idealPrice, int stockNumber){
+            if(stockNumber <= 0) return nullptr;
             add_transaction();
 
             BuyOrder buyOrder(transactionID, idealPrice, stockNumber);
 
             buyOrderList[buyOrder.getIdealPrice()].push_back(buyOrder);
             buyPriceList.insert(buyOrder.getIdealPrice());
+            activeID.insert(buyOrder.getID());
 
             return &buyOrderList[buyOrder.getIdealPrice()].back();
         }
 
         SellOrder* initiateSellOrder(int idealPrice, int stockNumber){
+            if(stockNumber <= 0) return nullptr;
             add_transaction();
 
             SellOrder sellOrder(transactionID, idealPrice, stockNumber);
             
             sellOrderList[sellOrder.getIdealPrice()].push_back(sellOrder);
             sellPriceList.insert(sellOrder.getIdealPrice());
+            activeID.insert(sellOrder.getID());
 
             return &sellOrderList[sellOrder.getIdealPrice()].back();
         }
@@ -91,8 +96,18 @@ class OrderBook{
             return tradeHistory;
         }
 
-        void cancel(int id){
+        void executeTrade(BuyOrder& buy, SellOrder& sell, int price, int quantity){
+            if(buy.applyTrade(quantity)) activeID.erase(buy.getID());
+            if(sell.applyTrade(quantity)) activeID.erase(sell.getID());
+            initiateTrade(sell.getID(), buy.getID(), price, quantity);
+        }
+
+        bool cancel(int id){
+            auto active = activeID.find(id);
+            if(active == activeID.end()) return false;
             canceledID.insert(id);
+            activeID.erase(active);
+            return true;
         }
 
         int getHighestPrice(){

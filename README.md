@@ -90,14 +90,8 @@ cmake --build build
 
 ## Tests
 
-The V1 suite covers:
-
-- non-crossing prices and equal-price matches;
-- partial fills and one order matching multiple counterparties;
-- FIFO matching within a shared price level;
-- successful and safe unsuccessful cancellations;
-- invariant checks: no crossed book after matching, and no trade quantity above
-  submitted quantity.
+See the [testing guide](tests/README.md) for build commands, individual tests,
+and instructions for generating and checking your own order files.
 
 ## Future work
 
