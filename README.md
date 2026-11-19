@@ -199,8 +199,10 @@ workload size.
 
 ### Results on MacBook Pro (Apple M4)
 
-Both implementations used the same Release compiler flags. The lazy baseline
-is commit `531c77d`.
+The `main` branch uses eager cancellation. The `lazy-cancellation-baseline`
+tag points to commit `531c77d`, which contains the lazy implementation for
+reproducing the comparison. Both implementations were benchmarked with the
+same Release compiler flags.
 
 #### Buy/sell submissions
 
