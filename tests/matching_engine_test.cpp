@@ -364,6 +364,35 @@ void caller_order_ids_stay_reserved() {
     require(next && next->getID() == 5, "a high caller ID must not advance the generated sequence");
 }
 
+void caller_order_ids_flow_through_matching_engine() {
+    constexpr int restingID = 42;
+    constexpr int incomingID = 73;
+    for (Side restingSide : {Side::buy, Side::sell}) {
+        matching_engine engine;
+        const auto submit = [&engine](Side side, int id, int price, int quantity) {
+            return side == Side::buy ? engine.submitBuyOrder(id, price, quantity)
+                                     : engine.submitSellOrder(id, price, quantity);
+        };
+        const int restingPrice = 100;
+        const int crossingPrice = restingSide == Side::buy ? 99 : 101;
+        const auto resting = submit(restingSide, restingID, restingPrice, 2);
+        require(resting && resting->id == restingID && resting->filled == 0 && resting->open == 2,
+                "a resting order receipt should contain the caller's ID");
+        require(!submit(opposite(restingSide), restingID, crossingPrice, 3),
+                "the engine should reject a duplicate ID on the opposite side");
+        require(engine.getTradeHistory().empty(), "a rejected crossing order must not trade");
+
+        const auto incoming = submit(opposite(restingSide), incomingID, crossingPrice, 3);
+        require(incoming && incoming->id == incomingID && incoming->filled == 2 && incoming->open == 1,
+                "a partially filled order receipt should contain the caller's ID");
+        require(tradeFields(onlyTrade(engine)) == expectedTrade(restingSide, restingID, incomingID, restingPrice, 2),
+                "a trade should record both caller IDs at the resting price");
+        require(engine.cancel(incomingID), "the remainder should be cancellable by its caller ID");
+        const auto depth = engine.getDepth(5);
+        require(depth.buys.empty() && depth.sells.empty(), "cancellation should remove the remainder");
+    }
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -384,6 +413,7 @@ int main(int argc, char* argv[]) {
         {"nonpositive_quantities_are_rejected", nonpositive_quantities_are_rejected},
         {"depth_aggregates_only_active_orders", depth_aggregates_only_active_orders},
         {"caller_order_ids_stay_reserved", caller_order_ids_stay_reserved},
+        {"caller_order_ids_flow_through_matching_engine", caller_order_ids_flow_through_matching_engine},
         {"replay_10_seed_42", [] { engine_test::runReplay(10, 42); }},
         {"replay_100_seed_42", [] { engine_test::runReplay(100, 42); }},
         {"replay_1000_seed_42", [] { engine_test::runReplay(1000, 42); }},
