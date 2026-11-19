@@ -4,9 +4,9 @@
 class Order{
     protected:
         int idealPrice = 0; int stockNumber = 0;
+        int id;
 
     public:
-        int id;
 
         virtual int match(int, int) = 0;
 
