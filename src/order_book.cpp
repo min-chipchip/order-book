@@ -174,6 +174,11 @@ BuyOrder* OrderBook::getBestBuyOrder(int SellOrder) {
 
         if(currentBuyOrder->getStockNumber() == 0){
             buyOrderList[bestPrice].pop_front();
+
+            if(buyOrderList[bestPrice].empty()){
+                buyPriceList.erase(bestPrice);
+            }
+
             continue;
         }
 
@@ -195,6 +200,11 @@ SellOrder* OrderBook::getBestSellOrder(int BuyOrder) {
 
         if(currentSellOrder->getStockNumber() == 0){
             sellOrderList[bestPrice].pop_front();
+
+            if(sellOrderList[bestPrice].empty()){
+                sellPriceList.erase(bestPrice);
+            }
+
             continue;
         }
 
