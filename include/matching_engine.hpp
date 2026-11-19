@@ -19,10 +19,12 @@ class matching_engine {
         void receiveBuyOrder(int idealPrice, int stockNumber);
 
         std::optional<OrderReceipt> submitBuyOrder(int idealPrice, int stockNumber);
+        std::optional<OrderReceipt> submitBuyOrder(int id, int idealPrice, int stockNumber);
 
         void receiveSellOrder(int idealPrice, int stockNumber);
 
         std::optional<OrderReceipt> submitSellOrder(int idealPrice, int stockNumber);
+        std::optional<OrderReceipt> submitSellOrder(int id, int idealPrice, int stockNumber);
 
         OrderBook::Depth getDepth(std::size_t limit) const;
 
@@ -37,4 +39,8 @@ class matching_engine {
         void receiveSellOrder(SellOrder* sellOrder);
 
         void print();
+
+    private:
+        std::optional<OrderReceipt> matchAndGetReceipt(BuyOrder* order);
+        std::optional<OrderReceipt> matchAndGetReceipt(SellOrder* order);
 };

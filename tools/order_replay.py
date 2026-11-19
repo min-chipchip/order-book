@@ -35,8 +35,8 @@ def read_orders(path):
     orders = []
     for number, line in lines[1:]:
         fields = line.split()
-        if len(fields) != 3 or fields[0] not in ("buy", "sell"):
-            raise ValueError(f"line {number}: expected buy/sell PRICE_CENTS QUANTITY")
+        if len(fields) != 3 or fields[0] not in ("BUY", "SELL"):
+            raise ValueError(f"line {number}: expected BUY/SELL PRICE_CENTS QUANTITY")
         side, price, quantity = fields
         try:
             orders.append((side, read_int(price, INT_MIN, INT_MAX), read_int(quantity, 1, INT_MAX)))
@@ -51,7 +51,7 @@ def match_orders(orders):
     for side, price, remaining in orders:
         transaction_id += 1
         order_id = transaction_id
-        is_buy = side == "buy"
+        is_buy = side == "BUY"
         own, opposite = (bids, asks) if is_buy else (asks, bids)
         while remaining and opposite:
             priority, resting_id, resting_quantity = opposite[0]
@@ -122,7 +122,7 @@ def main():
         random_source = random.Random(args.seed)
         print(args.count)
         for _ in range(args.count):
-            side = random_source.choice(("buy", "sell"))
+            side = random_source.choice(("BUY", "SELL"))
             price = random_source.randint(args.min_price, args.max_price)
             quantity = random_source.randint(1, args.max_quantity)
             print(side, price, quantity)

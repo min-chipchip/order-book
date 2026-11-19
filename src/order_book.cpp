@@ -1,9 +1,20 @@
 #include "order_book.hpp"
 
 #include <climits>
+#include <stdexcept>
 
 void OrderBook::add_transaction() {
-    transactionID++;
+    if (transactionID == INT_MAX) {
+        throw std::overflow_error("No sequential transaction IDs remain");
+    }
+    ++transactionID;
+}
+
+int OrderBook::nextOrderID() {
+    do {
+        add_transaction();
+    } while (usedOrderIDs.count(transactionID) != 0);
+    return transactionID;
 }
 
 OrderBook::OrderBook() {
@@ -45,10 +56,13 @@ std::ostream& operator<<(std::ostream& os, const OrderBook& p) {
 
 BuyOrder* OrderBook::initiateBuyOrder(int idealPrice, int stockNumber) {
     if(stockNumber <= 0) return nullptr;
-    add_transaction();
+    return initiateBuyOrder(nextOrderID(), idealPrice, stockNumber);
+}
 
-    BuyOrder buyOrder(transactionID, idealPrice, stockNumber);
+BuyOrder* OrderBook::initiateBuyOrder(int id, int idealPrice, int stockNumber) {
+    if (stockNumber <= 0 || !usedOrderIDs.insert(id).second) return nullptr;
 
+    BuyOrder buyOrder(id, idealPrice, stockNumber);
     buyOrderList[buyOrder.getIdealPrice()].push_back(buyOrder);
     buyPriceList.insert(buyOrder.getIdealPrice());
     activeID.insert(buyOrder.getID());
@@ -58,10 +72,13 @@ BuyOrder* OrderBook::initiateBuyOrder(int idealPrice, int stockNumber) {
 
 SellOrder* OrderBook::initiateSellOrder(int idealPrice, int stockNumber) {
     if(stockNumber <= 0) return nullptr;
-    add_transaction();
+    return initiateSellOrder(nextOrderID(), idealPrice, stockNumber);
+}
 
-    SellOrder sellOrder(transactionID, idealPrice, stockNumber);
+SellOrder* OrderBook::initiateSellOrder(int id, int idealPrice, int stockNumber) {
+    if (stockNumber <= 0 || !usedOrderIDs.insert(id).second) return nullptr;
 
+    SellOrder sellOrder(id, idealPrice, stockNumber);
     sellOrderList[sellOrder.getIdealPrice()].push_back(sellOrder);
     sellPriceList.insert(sellOrder.getIdealPrice());
     activeID.insert(sellOrder.getID());
@@ -108,9 +125,9 @@ OrderBook::Depth OrderBook::getDepth(std::size_t limit) const {
 }
 
 void OrderBook::executeTrade(BuyOrder& buy, SellOrder& sell, int price, int quantity) {
+    initiateTrade(sell.getID(), buy.getID(), price, quantity);
     if(buy.applyTrade(quantity)) activeID.erase(buy.getID());
     if(sell.applyTrade(quantity)) activeID.erase(sell.getID());
-    initiateTrade(sell.getID(), buy.getID(), price, quantity);
 }
 
 bool OrderBook::cancel(int id) {

@@ -331,6 +331,72 @@ void depth_aggregates_only_active_orders() {
             "sell depth should omit the filled price level and sort the remainder");
 }
 
+void caller_order_ids_stay_reserved() {
+    OrderBook book;
+    require(book.initiateSellOrder(1, 100, 0) == nullptr,
+            "an invalid quantity must leave the caller ID available");
+    SellOrder* sell = book.initiateSellOrder(1, 100, 2);
+    BuyOrder* buy = book.initiateBuyOrder(3, 100, 3);
+    require(sell && sell->getID() == 1 && buy && buy->getID() == 3,
+            "both sides should store the caller's ID");
+    require(book.initiateBuyOrder(1, 100, 1) == nullptr,
+            "an active sell ID cannot be reused for a buy");
+
+    const BuyOrder* generated = book.initiateBuyOrder(99, 1);
+    require(generated && generated->getID() == 2, "automatic IDs should skip caller IDs");
+    require(book.initiateSellOrder(2, 105, 1) == nullptr,
+            "a generated order ID cannot be reused");
+
+    book.executeTrade(*buy, *sell, 100, 2);
+    const auto& trades = book.getTradeHistory();
+    require(trades.size() == 1 && trades.front().getID() == 3 &&
+            trades.front().getBuyID() == 3 && trades.front().getSellID() == 1,
+            "a trade ID may overlap numerically with an order ID");
+    require(book.initiateBuyOrder(1, 100, 1) == nullptr, "a filled ID must stay reserved");
+    require(book.cancel(3), "a partially filled order should be cancellable by its caller ID");
+
+    const SellOrder* highId = book.initiateSellOrder(INT_MAX, 105, 1);
+    require(highId && highId->getID() == INT_MAX, "a high caller ID should be accepted");
+    require(book.cancel(INT_MAX), "a sell should be cancellable by its caller ID");
+    require(book.initiateSellOrder(INT_MAX, 105, 1) == nullptr, "a canceled ID must stay reserved");
+    const SellOrder* next = book.initiateSellOrder(105, 1);
+    require(next && next->getID() == 4, "a high caller ID must not advance the generated sequence");
+}
+
+void caller_order_ids_flow_through_matching_engine() {
+    constexpr int restingID = 42;
+    constexpr int incomingID = 73;
+    for (Side restingSide : {Side::buy, Side::sell}) {
+        matching_engine engine;
+        const auto submit = [&engine](Side side, int id, int price, int quantity) {
+            return side == Side::buy ? engine.submitBuyOrder(id, price, quantity)
+                                     : engine.submitSellOrder(id, price, quantity);
+        };
+        const int restingPrice = 100;
+        const int crossingPrice = restingSide == Side::buy ? 99 : 101;
+        const auto resting = submit(restingSide, restingID, restingPrice, 2);
+        require(resting && resting->id == restingID && resting->filled == 0 && resting->open == 2,
+                "a resting order receipt should contain the caller's ID");
+        require(!submit(opposite(restingSide), restingID, crossingPrice, 3),
+                "the engine should reject a duplicate ID on the opposite side");
+        require(engine.getTradeHistory().empty(), "a rejected crossing order must not trade");
+
+        const auto incoming = submit(opposite(restingSide), incomingID, crossingPrice, 3);
+        require(incoming && incoming->id == incomingID && incoming->filled == 2 && incoming->open == 1,
+                "a partially filled order receipt should contain the caller's ID");
+        require(tradeFields(onlyTrade(engine)) == expectedTrade(restingSide, restingID, incomingID, restingPrice, 2),
+                "a trade should record both caller IDs at the resting price");
+        require(engine.cancel(incomingID), "the remainder should be cancellable by its caller ID");
+        const auto depth = engine.getDepth(5);
+        require(depth.buys.empty() && depth.sells.empty(), "cancellation should remove the remainder");
+
+        const int tradeID = onlyTrade(engine).getID();
+        require(!engine.cancel(tradeID), "a trade ID by itself does not identify a cancellable order");
+        const auto newOrder = engine.submitBuyOrder(tradeID, restingPrice, 1);
+        require(newOrder && newOrder->id == tradeID, "an earlier trade must not reserve an order ID");
+    }
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -350,6 +416,8 @@ int main(int argc, char* argv[]) {
         {"cancellations_100_operations_preserve_queue_order", cancellations_100_operations_preserve_queue_order},
         {"nonpositive_quantities_are_rejected", nonpositive_quantities_are_rejected},
         {"depth_aggregates_only_active_orders", depth_aggregates_only_active_orders},
+        {"caller_order_ids_stay_reserved", caller_order_ids_stay_reserved},
+        {"caller_order_ids_flow_through_matching_engine", caller_order_ids_flow_through_matching_engine},
         {"replay_10_seed_42", [] { engine_test::runReplay(10, 42); }},
         {"replay_100_seed_42", [] { engine_test::runReplay(100, 42); }},
         {"replay_1000_seed_42", [] { engine_test::runReplay(1000, 42); }},

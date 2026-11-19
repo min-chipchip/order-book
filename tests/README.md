@@ -65,14 +65,14 @@ seed to get a new sequence. A narrow price range creates more ties and makes
 the dataset useful for checking FIFO.
 
 To write a file by hand, put the number of order rows on the first line. Follow
-it with one lowercase `buy` or `sell` per line, a price in integer cents, and a
+it with one uppercase `BUY` or `SELL` per line, a price in integer cents, and a
 positive quantity in shares.
 
 ```text
 3
-sell 9800 4
-buy 9802 2
-buy 9799 5
+SELL 9800 4
+BUY 9802 2
+BUY 9799 5
 ```
 
 This should produce one trade for 2 shares at 9800, an open sell for 2 shares
@@ -91,5 +91,5 @@ and seller IDs for each trade and exercise cancellation through the C++ API.
   difference between the expected and actual output. Lines beginning with
   `-` are expected and lines beginning with `+` came from the simulator.
 - If the simulator reports an invalid row or the checker reports `ERROR`,
-  check the row count, lowercase side, and numeric fields first. The checker
-  requires the header to match the number of order rows exactly.
+  check the row count, uppercase command names, and numeric fields first. The
+  checker requires the header to match the number of order rows exactly.
