@@ -33,7 +33,8 @@ void writeSnapshot(const matching_engine& engine) {
         const auto& trade = trades[trades.size() - 1 - i];
         if (i != 0) std::cout << ',';
         std::cout << '[' << trade.getID() << ',' << trade.getPrice()
-                  << ',' << trade.getStockNumber() << ']';
+                  << ',' << trade.getStockNumber() << ',' << trade.getBuyID()
+                  << ',' << trade.getSellID() << ']';
     }
     std::cout << "]}";
 }
@@ -47,17 +48,23 @@ void handleRequest(matching_engine& engine, const std::string& line) {
         return;
     }
 
+    int id;
+    if (command == "cancel" && (request >> id) && !(request >> extra)) {
+        std::cout << "{\"canceled\":" << (engine.cancel(id) ? "true" : "false") << '}';
+        return;
+    }
+
     int price, quantity;
     if ((command != "buy" && command != "sell") ||
-        !(request >> price >> quantity) || (request >> extra) || price <= 0 || quantity <= 0) {
+        !(request >> id >> price >> quantity) || (request >> extra) || price <= 0 || quantity <= 0) {
         std::cout << "{\"error\":\"Invalid engine request\"}";
         return;
     }
 
-    const auto receipt = command == "buy" ? engine.submitBuyOrder(price, quantity)
-                                           : engine.submitSellOrder(price, quantity);
+    const auto receipt = command == "buy" ? engine.submitBuyOrder(id, price, quantity)
+                                           : engine.submitSellOrder(id, price, quantity);
     if (!receipt) {
-        std::cout << "{\"error\":\"Order rejected\"}";
+        std::cout << "{\"accepted\":false}";
         return;
     }
     std::cout << "{\"id\":" << receipt->id << ",\"filled\":" << receipt->filled

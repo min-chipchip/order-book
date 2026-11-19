@@ -13,31 +13,50 @@
     </header>
 
     <div class="exchange-main">
-      <section class="panel" aria-labelledby="order-heading">
-        <h2 id="order-heading">Place an order</h2>
-        <form action="/orders" method="post">
-          <fieldset>
-            <legend>Side</legend>
-            <div class="side-options">
-              <label><input type="radio" name="side" value="buy" $buy_checked><span>Buy</span></label>
-              <label><input type="radio" name="side" value="sell" $sell_checked><span>Sell</span></label>
+      <div class="panel">
+        <section aria-labelledby="order-heading">
+          <h2 id="order-heading">Place an order</h2>
+          <form action="/orders" method="post">
+            <fieldset>
+              <legend>Side</legend>
+              <div class="side-options">
+                <label><input type="radio" name="side" value="buy" $buy_checked><span>Buy</span></label>
+                <label><input type="radio" name="side" value="sell" $sell_checked><span>Sell</span></label>
+              </div>
+            </fieldset>
+            <div class="order-fields">
+              <label class="order-id-field">
+                <span>Order ID</span>
+                <input name="id" pattern="-?[0-9]+" title="Enter a whole-number order ID" placeholder="42" value="$order_value" required>
+              </label>
+              <label>
+                <span>Quantity</span>
+                <input name="quantity" inputmode="numeric" pattern="[0-9]+" title="Enter a whole number of shares" placeholder="12" value="$quantity" required>
+              </label>
+              <label>
+                <span>Limit price <span class="unit">(USD)</span></span>
+                <input name="price" inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" title="Enter dollars with up to two decimal places" placeholder="100.15" value="$price" required>
+              </label>
             </div>
-          </fieldset>
-          <div class="order-fields">
+            <button type="submit">Place order</button>
+            $error
+          </form>
+          <div class="receipt" role="status">$receipt</div>
+        </section>
+
+        <section class="cancel-order" aria-labelledby="cancel-heading">
+          <h2 id="cancel-heading">Cancel order</h2>
+          <form action="/cancel" method="post" class="order-fields cancel-fields">
             <label>
-              <span>Quantity</span>
-              <input name="quantity" inputmode="numeric" pattern="[0-9]+" title="Enter a whole number of shares" placeholder="12" value="$quantity" required>
+              <span>Order ID</span>
+              <input name="id" pattern="-?[0-9]+" title="Enter the order ID to cancel" value="$cancel_value" required>
             </label>
-            <label>
-              <span>Limit price <span class="unit">(USD)</span></span>
-              <input name="price" inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" title="Enter dollars with up to two decimal places" placeholder="100.15" value="$price" required>
-            </label>
-          </div>
-          <button type="submit">Place order</button>
-          $error
-        </form>
-        <div class="receipt" role="status">$receipt</div>
-      </section>
+            <button type="submit">Cancel order</button>
+            $cancel_error
+          </form>
+          $cancel_status
+        </section>
+      </div>
 
       <section class="panel" aria-labelledby="book-heading">
         <h2 id="book-heading">Order book</h2>
@@ -58,7 +77,15 @@
       <section class="panel trades" aria-labelledby="trades-heading">
         <h2 id="trades-heading">Recent trades</h2>
         <table aria-labelledby="trades-heading">
-          <thead><tr><th scope="col">Trade ID</th><th scope="col">Execution price</th><th scope="col">Quantity</th></tr></thead>
+          <thead>
+            <tr>
+              <th scope="col">Trade ID</th>
+              <th scope="col">Buy order ID</th>
+              <th scope="col">Sell order ID</th>
+              <th scope="col">Execution price</th>
+              <th scope="col">Quantity</th>
+            </tr>
+          </thead>
           <tbody>$trade_rows</tbody>
         </table>
       </section>

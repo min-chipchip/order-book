@@ -9,3 +9,6 @@ add_test(NAME matching_engine COMMAND order_book_tests)
 add_test(NAME order_book_cli COMMAND ${CMAKE_COMMAND}
     "-DORDER_BOOK=$<TARGET_FILE:order_book>"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/order_book_cli_test.cmake")
+add_test(NAME order_book_web COMMAND ${CMAKE_COMMAND}
+    "-DORDER_BOOK_WEB=$<TARGET_FILE:order_book_web>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/order_book_web_test.cmake")
