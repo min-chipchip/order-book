@@ -2,6 +2,7 @@
 
 #include <climits>
 #include <stdexcept>
+#include <utility>
 
 void OrderBook::add_transaction() {
     if (transactionID == INT_MAX) {
@@ -211,4 +212,57 @@ SellOrder* OrderBook::getBestSellOrder(int BuyOrder) {
         return currentSellOrder;
     }
     return nullptr;
+}
+
+OrderBook OrderBook::DeepCopy() {
+    return OrderBook(*this);
+}
+
+OrderBook::OrderBook(const OrderBook& other) {
+    for(auto& [price, orders]: other.buyOrderList){
+        for(const BuyOrder& order: orders){
+            this->initiateBuyOrder(order.getID(), order.getIdealPrice(), order.getStockNumber());
+        }
+    }
+
+    for(auto& [price, orders]: other.sellOrderList){
+        for(const SellOrder& order: orders){
+            this->initiateSellOrder(order.getID(), order.getIdealPrice(), order.getStockNumber());
+        }
+    }
+
+    for(const Trade& trade: other.tradeHistory){
+        this->tradeHistory.push_back(trade.DeepCopy());
+    }
+
+    this->usedOrderIDs = other.usedOrderIDs;
+    this->transactionID = other.transactionID;
+}
+
+void OrderBook::swapState(OrderBook& other) noexcept {
+    buyOrderList.swap(other.buyOrderList);
+    buyIterator.swap(other.buyIterator);
+    buyPriceList.swap(other.buyPriceList);
+    sellOrderList.swap(other.sellOrderList);
+    sellIterator.swap(other.sellIterator);
+    sellPriceList.swap(other.sellPriceList);
+    tradeHistory.swap(other.tradeHistory);
+    activeID.swap(other.activeID);
+    usedOrderIDs.swap(other.usedOrderIDs);
+    std::swap(transactionID, other.transactionID);
+}
+
+OrderBook& OrderBook::operator=(const OrderBook& other) {
+    if (this != &other) {
+        OrderBook copy(other);
+        swapState(copy);
+    }
+    return *this;
+}
+
+OrderBook& OrderBook::operator=(OrderBook&& other) noexcept {
+    if (this != &other) {
+        swapState(other);
+    }
+    return *this;
 }

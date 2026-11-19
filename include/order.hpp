@@ -7,7 +7,6 @@ class Order{
         int id;
 
     public:
-
         virtual int match(int, int) = 0;
 
         friend std::ostream& operator<<(std::ostream& os, const Order& p){
@@ -62,6 +61,13 @@ class SellOrder: public Order{
             os << "Sell Order ID: " << p.id << ", Ideal Price: " << p.idealPrice << ", Stock Number: " << p.stockNumber;
             return os;
         }
+        SellOrder DeepCopy(){
+            SellOrder copy;
+            copy.id = this->id;
+            copy.idealPrice = this->idealPrice;
+            copy.stockNumber = this->stockNumber;
+            return copy;
+        }
 };
 
 class BuyOrder: public Order{
@@ -77,6 +83,14 @@ class BuyOrder: public Order{
         friend std::ostream& operator<<(std::ostream& os, const BuyOrder& p){
             os << "Buy Order ID: " << p.id << ", Ideal Price: " << p.idealPrice << ", Stock Number: " << p.stockNumber;
             return os;
+        }
+
+        BuyOrder DeepCopy(){
+            BuyOrder copy;
+            copy.id = this->id;
+            copy.idealPrice = this->idealPrice;
+            copy.stockNumber = this->stockNumber;
+            return copy;
         }
 };
 
@@ -116,5 +130,15 @@ class Trade{
         friend std::ostream& operator<<(std::ostream& os, const Trade& p){
             os << "Trade Order ID: " << p.id << ", Ideal Price: " << p.price << ", Stock Number: " << p.stockNumber;
             return os;
+        }
+
+        Trade DeepCopy() const{
+            Trade copy;
+            copy.id = this->id;
+            copy.sellID = this->sellID;
+            copy.buyID = this->buyID;
+            copy.price = this->price;
+            copy.stockNumber = this->stockNumber;
+            return copy;
         }
 };

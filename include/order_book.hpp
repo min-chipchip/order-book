@@ -28,6 +28,7 @@ class OrderBook {
     private:
         std::unordered_set<int> usedOrderIDs;
 
+        void swapState(OrderBook& other) noexcept;
         int nextOrderID();
 
     public:
@@ -68,4 +69,10 @@ class OrderBook {
         BuyOrder* getBestBuyOrder(int SellOrder);
 
         SellOrder* getBestSellOrder(int BuyOrder);
+
+        OrderBook DeepCopy();
+
+        OrderBook(const OrderBook& other);
+        OrderBook& operator=(const OrderBook& other);
+        OrderBook& operator=(OrderBook&& other) noexcept;
 };
