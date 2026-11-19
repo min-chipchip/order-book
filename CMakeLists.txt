@@ -48,6 +48,8 @@ target_link_libraries(order_book_web PRIVATE order_book_core)
 order_book_enable_warnings(order_book_web)
 order_book_enable_sanitizers(order_book_web)
 
+add_subdirectory(benchmark)
+
 # Create and register tests only when testing is enabled (BUILD_TESTING is ON).
 if(BUILD_TESTING)
     # Let the tests directory define its targets relative to itself.

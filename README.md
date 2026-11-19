@@ -70,20 +70,44 @@ The intended implementation keeps each side of the book in price levels:
 - `std::unordered_map` from order ID to its active order for efficient
   cancellation.
 
-The source layout is:
+### Source layout
 
 ```text
+CMakeLists.txt
+benchmark/
+  CMakeLists.txt
+  benchmark_cancellation.cpp
 include/
+  command_parser.hpp
+  matching_engine.hpp
   order.hpp
   order_book.hpp
-  matching_engine.hpp
+media/
+  web-buy-order.png
+  web-sell-order.png
+  web-trade.png
 src/
-  main.cpp
   command_parser.cpp
-  order_book.cpp
+  main.cpp
   matching_engine.cpp
+  order_book.cpp
+  web_engine.cpp
 tests/
+  CMakeLists.txt
+  README.md
+  data/
+    ten_orders.txt
+  engine_test_support.hpp
+  matching_engine_replay.cpp
   matching_engine_test.cpp
+  order_book_cli_test.cmake
+  order_book_web_test.cmake
+tools/
+  order_replay.py
+web/
+  index.html
+  server.py
+  styles.css
 ```
 
 ## Build and run
@@ -122,13 +146,71 @@ adapter invokes the engine and returns the result as JSON. The server
 redirects back to the page and renders the five best price levels on each
 side and the ten most recent trades.
 
+### Example orders and trade
+
+**Buy order.** Order `#41` adds a bid for 10 shares at $100.10.
+
+![Open buy order 41 and a bid for 10 shares at $100.10](media/web-buy-order.png)
+
+**Sell order.** Order `#73` adds an ask for 8 shares at $100.15. Both orders
+stay open because the buy limit is below the sell limit.
+
+![Open sell order 73 with the bid and ask shown in the order book](media/web-sell-order.png)
+
+**Trade.** Buy order `#42` requests 12 shares at $100.15. It fills 8 against
+order `#73`, leaving 4 open. The execution appears in Recent Trades.
+
+![Partial fill of buy order 42 and trade 1 for 8 shares at $100.15](media/web-trade.png)
+
 ## Tests
 
 See the [testing guide](tests/README.md) for build commands, individual tests,
 and instructions for generating and checking your own order files.
 
+## Benchmarks
+
+Build and run the benchmark in Release mode from the repository root.
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target benchmark
+./build/benchmark/benchmark
+```
+
+The benchmark reports median times in microseconds across 11 trials per
+workload size.
+
+- **Buy/sell submissions** replays a fixed-seed batch on a fresh engine for
+  each trial and measures the time to process the entire batch.
+- **Cancellation burst** queues same-price sell orders, cancels all but the
+  last, and measures the cancellation batch and the next matching buy
+  separately.
+
+### Results on MacBook Pro (Apple M4)
+
+Recorded on a MacBook Pro with an Apple M4 chip during a run from VS Code.
+
+#### Buy/sell submissions
+
+| Orders | Submit batch (µs) |
+| ---: | ---: |
+| 100 | 36.167 |
+| 1,000 | 677.417 |
+| 10,000 | 7,767.833 |
+| 100,000 | 70,734.541 |
+| 1,000,000 | 742,478.083 |
+
+#### Cancellation burst
+
+| Orders cancelled | Cancel batch (µs) | Next buy (µs) |
+| ---: | ---: | ---: |
+| 100 | 6.125 | 3.625 |
+| 1,000 | 60.583 | 34.334 |
+| 10,000 | 844.125 | 377.750 |
+| 100,000 | 17,353.958 | 4,012.417 |
+| 1,000,000 | 274,366.208 | 70,770.708 |
+
 ## Future work
 
 After V1 is robust, possible extensions include CSV replay/import and trade
-export, generated-order benchmarks, multiple symbols, amendments, and maximum
-quantity risk limits.
+export, multiple symbols, amendments, and maximum quantity risk limits.

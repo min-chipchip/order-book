@@ -1,0 +1,3 @@
+add_executable(benchmark benchmark_cancellation.cpp)
+target_link_libraries(benchmark PRIVATE order_book_core)
+order_book_enable_sanitizers(benchmark)
